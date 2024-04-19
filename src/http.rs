@@ -1,0 +1,53 @@
+//! Isolates [reqwest::Client] for testing
+
+use anyhow::Result;
+pub use reqwest::Url;
+use reqwest::{Client as ReqwestClient, IntoUrl, Response as ReqwestResponse, StatusCode};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use std::fmt::Debug;
+use std::future::Future;
+
+pub trait HttpClient {
+    type Response: HttpResponse + Debug;
+    fn get<U: IntoUrl>(&self, url: U) -> impl Future<Output = Result<Self::Response>>;
+    fn post<U: IntoUrl, F: Serialize>(
+        &self,
+        url: U,
+        form: &F,
+    ) -> impl Future<Output = Result<Self::Response>>;
+}
+
+/// Isolates [reqwest::Response] for testing
+#[cfg_attr(test, mockall::automock)]
+pub trait HttpResponse {
+    fn status(&self) -> StatusCode;
+    fn text(self) -> impl Future<Output = Result<String>>;
+    fn json<T: DeserializeOwned + 'static>(self) -> impl Future<Output = Result<T>>;
+}
+
+impl HttpClient for ReqwestClient {
+    type Response = ReqwestResponse;
+
+    async fn get<U: IntoUrl>(&self, url: U) -> Result<Self::Response> {
+        Ok(ReqwestClient::get(self, url).send().await?)
+    }
+
+    async fn post<U: IntoUrl, F: Serialize>(&self, url: U, form: &F) -> Result<Self::Response> {
+        Ok(ReqwestClient::post(self, url).form(form).send().await?)
+    }
+}
+
+impl HttpResponse for ReqwestResponse {
+    fn status(&self) -> StatusCode {
+        ReqwestResponse::status(self)
+    }
+
+    async fn text(self) -> Result<String> {
+        Ok(ReqwestResponse::text(self).await?)
+    }
+
+    async fn json<T: DeserializeOwned>(self) -> Result<T> {
+        Ok(ReqwestResponse::json(self).await?)
+    }
+}
