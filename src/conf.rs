@@ -8,11 +8,10 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::HashMap;
 use std::env;
-use std::fs::Permissions;
 use std::path::PathBuf;
 
 #[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
+use std::{fs::Permissions, os::unix::fs::PermissionsExt};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Conf {
@@ -63,6 +62,7 @@ impl Conf {
     }
 
     const CONF_FILE: &'static str = ".syno-photos-util";
+    #[cfg(unix)]
     const OWNER_RW: u32 = 0o600;
 
     pub fn try_save<F: Fs>(&self, fs: &F) -> Result<()> {
@@ -72,16 +72,16 @@ impl Conf {
         let conf_path = &Self::conf_path(fs)?;
         fs.copy(tmp_path, conf_path)?;
         fs.remove_file(tmp_path)?;
-        if cfg!(unix) {
-            fs.set_permissions(conf_path, Permissions::from_mode(Self::OWNER_RW))?;
-        }
+        #[cfg(unix)]
+        fs.set_permissions(conf_path, Permissions::from_mode(Self::OWNER_RW))?;
         Ok(())
     }
 
     pub fn try_load<F: Fs>(fs: &F) -> Option<Self> {
         Self::conf_path(fs)
             .map_or(None, |conf_path| {
-                if cfg!(unix) {
+                #[cfg(unix)]
+                {
                     let _ = fs.metadata(&conf_path).map(|m| {
                         /* & 0o777 removes file type part from the mode. Otherwise, the mode is
                          * 6 octal digits instead of 3 */

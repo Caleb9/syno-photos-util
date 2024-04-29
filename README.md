@@ -34,13 +34,17 @@ it handy as well.
 
 ## Usage
 
+Download the binary file for your platform from
+[Releases](https://github.com/caleb9/syno-photos-util/releases).
+
+> The following command examples omit the version and platform suffix
+> from binary name.
+
 Display the help message:
 
-```
+```bash
 ./syno-photos-util --help
 ```
-
-(`syno-photos-util.exe` on Windows)
 
 ```
 Usage: syno-photos-util [OPTIONS] <COMMAND>
@@ -76,7 +80,7 @@ Each command supports the `--help` option for a detailed description.
 Before you can use any of the other commands, you need to sign in to
 DSM:
 
-```
+```bash
 ./syno-photos-util login https://your.nas.address/
 ```
 
@@ -101,7 +105,7 @@ to not be asked for an OTP code next time you use the `login` command.
 After signing in successfully, you can list the contents of an album,
 printing their file-system paths on your NAS:
 
-```
+```bash
 ./syno-photos-util list "My Album"
 ```
 
@@ -132,7 +136,7 @@ In this example, My Album contains 3 photos:
 
 ### Export an album to a folder
 
-```
+```bash
 ./syno-photos-util export "My Album" "/my folder/my album dump"
 ```
 
@@ -153,7 +157,7 @@ periodically.
 
 You may want to logout from DSM when done:
 
-```
+```bash
 ./syno-photos-util logout
 ```
 
