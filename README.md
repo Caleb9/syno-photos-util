@@ -184,15 +184,10 @@ Alternatively, clone this git repository and build the project with
 (in the cloned directory):
 
 ```bash
-sed -i 's/path = "\(.*\)", version = /version = /' Cargo.toml
 cargo build --release
 ```
 
-`sed` is needed to remove the local paths to dependencies, and install
-them from crates.io instead (I'm using a Rust workspace when
-developing locally, so the build would fail if that's not set-up on a
-fresh clone). The binary is then located at
-`target/release/syno-photos-util`.
+The binary is then located at `target/release/syno-photos-util`.
 
 ## TODO
 
