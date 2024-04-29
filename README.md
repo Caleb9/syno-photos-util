@@ -2,6 +2,7 @@
 
 [![Crates.io
 Version](https://img.shields.io/crates/v/syno-photos-util)](https://crates.io/crates/syno-photos-util)
+[![build and release](https://github.com/Caleb9/syno-photos-util/actions/workflows/github-actions.yml/badge.svg)](https://github.com/Caleb9/syno-photos-util/actions/workflows/github-actions.yml)
 
 * List folders containing photos in a Synology Photos album
 * Copy album contents into a Synology Photos folder

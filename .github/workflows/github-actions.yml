@@ -1,3 +1,5 @@
+# Adjusted from https://github.com/dirien/rust-cross-compile
+
 name: build and release
 
 run-name: ${{ github.ref_name }}
