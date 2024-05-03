@@ -79,9 +79,6 @@ pub enum Command {
         folder_path: String,
     },
 
-    /// Check DSM sign-in status
-    Status,
-
     /// Sign out of DSM
     ///
     /// Removes session key from $HOME/.syno-photo-util file
@@ -93,6 +90,12 @@ pub enum Command {
         #[arg(long)]
         forget: bool,
     },
+
+    /// Check DSM sign-in status
+    Status,
+
+    /// Check if new version is available
+    CheckUpdate,
 }
 
 fn try_parse_duration(arg: &str) -> Result<Duration> {

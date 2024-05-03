@@ -9,6 +9,7 @@ use syno_api::foto::search::dto::Search;
 use syno_api::foto::setting::user::dto::UserSettings;
 
 mod api_client;
+pub mod check_update;
 mod error;
 pub mod export;
 pub mod list;

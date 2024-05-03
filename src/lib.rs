@@ -2,7 +2,7 @@ use crate::http::HeaderValue;
 pub use crate::{cli::Cli, fs::FsImpl, http::CookieClient, io::IoImpl};
 use crate::{
     cli::Command,
-    commands::{export, list, login, logout, status},
+    commands::{check_update, export, list, login, logout, status},
     conf::Conf,
     fs::Fs,
     http::{CookieStore, HttpClient},
@@ -25,6 +25,7 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
     io: &mut I,
     client: &mut CookieClient<C, S>,
     fs: &F,
+    installed_version: &str,
 ) -> Result<()> {
     let mut conf = Conf::try_load(fs).unwrap_or_else(Conf::new);
     if let Some(session) = &conf.session {
@@ -50,7 +51,6 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
             )
             .await
         }
-        Command::Status => status::handle(&conf, io),
         Command::List { album_name } => {
             list::handle(album_name.as_str(), &conf, &client.client, io).await
         }
@@ -68,5 +68,7 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
             .await
         }
         Command::Logout { forget } => logout::handle(conf, forget, fs),
+        Command::Status => status::handle(&conf, io),
+        Command::CheckUpdate => check_update::handle(installed_version, &client.client, io).await,
     }
 }

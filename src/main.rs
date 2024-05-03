@@ -14,8 +14,11 @@ async fn main() -> Result<()> {
         .without_timestamps()
         .env()
         .init()?;
+
     let cli = Cli::parse();
+
     let mut io = IoImpl::new();
+
     let cookie_store = Arc::new(Jar::default());
     let mut client = CookieClient {
         client: ClientBuilder::default()
@@ -24,5 +27,9 @@ async fn main() -> Result<()> {
             .build()?,
         cookie_store,
     };
-    syno_photos_util::run(cli, &mut io, &mut client, &FsImpl).await
+
+    /* This crate version */
+    let installed_version = env!("CARGO_PKG_VERSION");
+
+    syno_photos_util::run(cli, &mut io, &mut client, &FsImpl, installed_version).await
 }
