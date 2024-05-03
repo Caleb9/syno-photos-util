@@ -1,7 +1,6 @@
 //! Extra methods for SessionClient used by export command
 
-use crate::commands::api_client::{ApiClient, ApiQueryParams, SessionClient, Space};
-use crate::conf::Session;
+use crate::commands::api_client::{ApiClient, ApiParams, SessionClient, Space};
 use anyhow::Result;
 use serde::Deserialize;
 use syno_api::dto::List;
@@ -16,15 +15,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             folder: Folder,
         }
 
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let folder: FolderContainer = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::folder::API, "get", 1, session_id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::folder::API, "get", 1),
                 &[("name", name)],
             )
             .await?;
@@ -46,10 +41,6 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             Space::Personal => foto::background_task::file::API,
             Space::Shared => foto_team::background_task::file::API,
         };
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let ids = photo_ids
             .iter()
             .map(u32::to_string)
@@ -58,8 +49,8 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
         let task: TaskContainer = self
             .client
             .post(
-                url.clone(),
-                ApiQueryParams::new(api, "copy", 1, session_id),
+                self.dsm_url.clone(),
+                ApiParams::new(api, "copy", 1),
                 &[
                     ("target_folder_id", target_folder_id.to_string().as_str()),
                     ("item_id", format!("[{ids}]").as_str()),
@@ -72,10 +63,6 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 
     pub async fn get_task_status(&self, task_ids: &[u32]) -> Result<Vec<TaskInfo>> {
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let ids = task_ids
             .iter()
             .map(u32::to_string)
@@ -84,13 +71,8 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
         let task_infos: List<TaskInfo> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(
-                    foto::background_task::info::API,
-                    "get_status",
-                    1,
-                    session_id,
-                ),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::background_task::info::API, "get_status", 1),
                 &[("id", format!("[{ids}]").as_str())],
             )
             .await?;

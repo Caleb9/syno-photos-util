@@ -1,8 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
 use log::LevelFilter;
+use reqwest::cookie::Jar;
+use reqwest::ClientBuilder;
 use simple_logger::SimpleLogger;
-use syno_photos_util::{Cli, ClientBuilder, FsImpl, IoImpl};
+use std::sync::Arc;
+use syno_photos_util::{Cli, CookieClient, FsImpl, IoImpl};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -13,8 +16,13 @@ async fn main() -> Result<()> {
         .init()?;
     let cli = Cli::parse();
     let mut io = IoImpl::new();
-    let client = ClientBuilder::default()
-        .timeout(cli.timeout_seconds)
-        .build()?;
-    syno_photos_util::run(cli, &mut io, &client, &FsImpl).await
+    let cookie_store = Arc::new(Jar::default());
+    let mut client = CookieClient {
+        client: ClientBuilder::default()
+            .cookie_provider(cookie_store.clone())
+            .timeout(cli.timeout_seconds)
+            .build()?,
+        cookie_store,
+    };
+    syno_photos_util::run(cli, &mut io, &mut client, &FsImpl).await
 }

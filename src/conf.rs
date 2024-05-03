@@ -1,6 +1,6 @@
 //! Session file ($HOME/.syno-photos-util) support
 
-use crate::commands::login::creds::{DeviceId, SessionId};
+use crate::commands::login::creds::DeviceId;
 use crate::fs::Fs;
 use crate::http::Url;
 use anyhow::{anyhow, Result};
@@ -24,7 +24,7 @@ pub struct Conf {
 pub struct Session {
     #[serde_as(as = "DisplayFromStr")]
     pub url: Url,
-    pub id: SessionId,
+    pub cookie: String,
 }
 
 impl Conf {

@@ -2,11 +2,13 @@ use super::DsmError;
 use crate::{
     conf::{Conf, Session},
     fs::Fs,
-    http::{HttpClient, Url},
+    http::{CookieStore, HttpClient, Url},
     io::{read_input, Io},
+    CookieClient,
 };
 use anyhow::{anyhow, bail, Result};
-use creds::{DeviceId, InputReader, SessionId, UserCredentials};
+use creds::{DeviceId, InputReader, UserCredentials};
+use std::str::FromStr;
 use syno_api::auth::dto::Login;
 use syno_api::auth::error::AuthError;
 
@@ -15,19 +17,30 @@ pub mod creds;
 
 pub type LoginArgs = (Option<String>, Option<String>, bool);
 
-pub async fn handle<C: HttpClient, I: Io, F: Fs>(
+pub async fn handle<C: HttpClient, S: CookieStore, I: Io, F: Fs>(
     dsm_url: Option<Url>,
     (user, password, remember_dev): LoginArgs,
     conf: &mut Conf,
-    client: &C,
+    client: &CookieClient<C, S>,
     io: &mut I,
     fs: &F,
 ) -> Result<()> {
     let dsm_url = unwrap_or_read_dsm_url(dsm_url, conf, io)?;
-    let login_dto = login_flow(&dsm_url, (user, password, remember_dev), conf, io, client).await?;
+    let login_dto = login_flow(
+        &dsm_url,
+        (user, password, remember_dev),
+        conf,
+        io,
+        &client.client,
+    )
+    .await?;
+    let session_cookie = client
+        .cookie_store
+        .cookies(&dsm_url)
+        .expect("login response should contain session cookie");
     conf.session = Some(Session {
         url: dsm_url,
-        id: SessionId::new(login_dto.sid)?,
+        cookie: String::from_str(session_cookie.to_str()?)?,
     });
     if remember_dev {
         conf.set_device_id(DeviceId::new(login_dto.did)?);

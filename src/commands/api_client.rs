@@ -1,8 +1,7 @@
 use super::{Album, DsmError};
 use crate::commands::error::HttpError;
-use crate::commands::login::creds::SessionId;
 use crate::conf::Session;
-use crate::http::{HttpClient, HttpResponse};
+use crate::http::{HttpClient, HttpResponse, Url};
 use anyhow::{bail, Result};
 use reqwest::IntoUrl;
 use serde::de::DeserializeOwned;
@@ -19,44 +18,40 @@ use syno_api::foto::setting::user::dto::UserSettings;
 /// Trait to add `get` and `post` methods to `HttpClient` which take parameters required by Synology
 /// Photos API
 pub trait ApiClient {
-    fn get<'a, U, S, R>(
+    fn get<'a, U, R>(
         &self,
         url: U,
-        common_params: ApiQueryParams<'a, S>,
-        other_params: &[(&str, &str)],
+        common_query_params: ApiParams<'a>,
+        query_params: &[(&str, &str)],
     ) -> impl Future<Output = Result<R>>
     where
         U: IntoUrl,
-        S: Into<Option<&'a SessionId>>,
         R: DeserializeOwned + 'static;
 
-    fn post<'a, U, S, R>(
+    fn post<'a, U, R>(
         &self,
         url: U,
-        common_params: ApiQueryParams<'a, S>,
-        other_params: &[(&str, &str)],
+        common_params: ApiParams<'a>,
+        form_params: &[(&str, &str)],
     ) -> impl Future<Output = Result<R>>
     where
         U: IntoUrl,
-        S: Into<Option<&'a SessionId>>,
         R: DeserializeOwned + 'static;
 }
 
 impl<C: HttpClient> ApiClient for C {
-    async fn get<'a, U, S, R>(
+    async fn get<'a, U, R>(
         &self,
         url: U,
-        ApiQueryParams {
+        ApiParams {
             api,
             method,
             version,
-            sid,
-        }: ApiQueryParams<'a, S>,
+        }: ApiParams<'a>,
         params: &[(&str, &str)],
     ) -> Result<R>
     where
         U: IntoUrl,
-        S: Into<Option<&'a SessionId>>,
         R: DeserializeOwned + 'static,
     {
         let mut url = url.into_url()?;
@@ -68,9 +63,6 @@ impl<C: HttpClient> ApiClient for C {
             version={}",
             api, method, version
         );
-        if let Some(sid) = sid.into() {
-            query.push_str(format!("&_sid={sid}").as_str());
-        }
         for (key, value) in params {
             query.push_str(format!("&{key}={value}").as_str());
         }
@@ -80,34 +72,26 @@ impl<C: HttpClient> ApiClient for C {
         Ok(data_dto)
     }
 
-    async fn post<'a, U, S, R>(
+    async fn post<'a, U, R>(
         &self,
         url: U,
-        ApiQueryParams {
+        ApiParams {
             api,
             method,
             version,
-            sid,
-        }: ApiQueryParams<'a, S>,
+        }: ApiParams<'a>,
         params: &[(&str, &str)],
     ) -> Result<R>
     where
         U: IntoUrl,
-        S: Into<Option<&'a SessionId>>,
         R: DeserializeOwned + 'static,
     {
         let mut url = url.into_url()?;
         let path = url.path().trim_end_matches('/');
         url.set_path(format!("{path}/webapi/entry.cgi").as_str());
+        url.set_query(Some(format!("api={api}").as_str()));
         let version = version.to_string();
-        let mut form = vec![
-            ("api", api),
-            ("method", method),
-            ("version", version.as_str()),
-        ];
-        if let Some(sid) = sid.into() {
-            form.push(("_sid", sid.as_str()));
-        }
+        let mut form = vec![("method", method), ("version", version.as_str())];
         for param in params {
             form.push(*param);
         }
@@ -144,45 +128,42 @@ where
 
 /// Request-parameters required by Synology Photos API
 #[derive(Debug, Copy, Clone)]
-pub struct ApiQueryParams<'a, S> {
+pub struct ApiParams<'a> {
     api: &'a str,
     method: &'a str,
     version: u8,
-    sid: S,
 }
 
-impl<'a, S> ApiQueryParams<'a, S>
-where
-    S: Into<Option<&'a SessionId>>,
-{
-    pub fn new(api: &'a str, method: &'a str, version: u8, sid: S) -> Self {
+impl<'a> ApiParams<'a> {
+    pub fn new(api: &'a str, method: &'a str, version: u8) -> Self {
         Self {
             api,
             method,
             version,
-            sid,
         }
     }
 }
 
 /// Provides methods to query Synology Photos API when logged-in. Used by multiple commands.
 pub struct SessionClient<'a, C> {
-    pub(crate) session: &'a Session,
+    pub(crate) dsm_url: &'a Url,
     pub(crate) client: &'a C,
 }
 
 impl<'a, C: ApiClient> SessionClient<'a, C> {
     pub fn new(session: &'a Session, client: &'a C) -> Self {
-        SessionClient { session, client }
+        SessionClient {
+            dsm_url: &session.url,
+            client,
+        }
     }
 
     pub async fn get_user_settings(&self) -> Result<UserSettings> {
-        let Session { url, id } = self.session;
         self.client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::setting::user::API, "get", 1, id),
-                &[("id", id.to_string().as_str())],
+                self.dsm_url.clone(),
+                ApiParams::new(foto::setting::user::API, "get", 1),
+                &[],
             )
             .await
     }
@@ -193,12 +174,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             count: u32,
         }
 
-        let Session { url, id } = self.session;
         let data: CountContainer = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::album::API, "count", 2, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::album::API, "count", 2),
                 &[],
             )
             .await?;
@@ -206,12 +186,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 
     pub async fn list_owned_albums(&self, limit: u32) -> Result<Vec<AlbumDto>> {
-        let Session { url, id } = self.session;
         let data: List<AlbumDto> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::album::API, "list", 2, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::album::API, "list", 2),
                 &[("offset", "0"), ("limit", limit.to_string().as_str())],
             )
             .await?;
@@ -223,12 +202,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
         offset: u32,
         limit: u32,
     ) -> Result<Vec<AlbumDto>> {
-        let Session { url, id } = self.session;
         let data: List<AlbumDto> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::sharing::misc::API, "list_shared_with_me_album", 2, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::sharing::misc::API, "list_shared_with_me_album", 2),
                 &[
                     ("offset", offset.to_string().as_str()),
                     ("limit", limit.to_string().as_str()),
@@ -244,12 +222,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             count: u32,
         }
 
-        let Session { url, id } = self.session;
         let data: CountContainer = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::person::API, "count", 2, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::person::API, "count", 2),
                 &[("show_more", true.to_string().as_str())],
             )
             .await?;
@@ -257,12 +234,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 
     pub async fn list_people(&self, limit: u32) -> Result<Vec<Person>> {
-        let Session { url, id } = self.session;
         let data: List<Person> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::person::API, "list", 1, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::person::API, "list", 1),
                 &[("offset", "0"), ("limit", limit.to_string().as_str())],
             )
             .await?;
@@ -270,16 +246,12 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 
     pub async fn list_items(&self, album: &Album, limit: u32) -> Result<Vec<Item>> {
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let (key, value) = album.id_param();
         let items: List<Item> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::browse::item::API, "list", 1, session_id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::item::API, "list", 1),
                 &[
                     (key, value.as_str()),
                     ("offset", "0"),
@@ -293,12 +265,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     /// This is unreliable on the API side (returns errors e.g. when keyword starts with numbers,
     /// or just doesn't return anything in other scenarios...). Use only for informational purposes.
     pub async fn suggest_albums(&self, album_name: &str) -> Result<Vec<Search>> {
-        let Session { url, id } = self.session;
         let data: List<Search> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::search::API, "suggest", 6, id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::search::API, "suggest", 6),
                 &[("keyword", album_name)],
             )
             .await?;

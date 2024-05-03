@@ -1,7 +1,6 @@
 //! Extra methods for SessionClient used by list command
 
-use crate::commands::api_client::{ApiClient, ApiQueryParams, SessionClient, Space};
-use crate::conf::Session;
+use crate::commands::api_client::{ApiClient, ApiParams, SessionClient, Space};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -20,15 +19,11 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             Space::Personal => foto::browse::folder::API,
             Space::Shared => foto_team::browse::folder::API,
         };
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let folder: FolderContainer = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(api, "get", 1, session_id),
+                self.dsm_url.clone(),
+                ApiParams::new(api, "get", 1),
                 &[("id", id.to_string().as_str())],
             )
             .await?;
@@ -36,10 +31,6 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 
     pub async fn get_users(&self, user_ids: &HashSet<u32>) -> Result<Vec<UserInfo>> {
-        let Session {
-            url,
-            id: session_id,
-        } = self.session;
         let ids = user_ids
             .iter()
             .map(u32::to_string)
@@ -48,8 +39,8 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
         let users: List<UserInfo> = self
             .client
             .get(
-                url.clone(),
-                ApiQueryParams::new(foto::user_info::API, "get", 1, session_id),
+                self.dsm_url.clone(),
+                ApiParams::new(foto::user_info::API, "get", 1),
                 &[("id", format!("[{ids}]").as_str())],
             )
             .await?;

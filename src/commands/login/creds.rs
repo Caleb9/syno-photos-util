@@ -76,19 +76,3 @@ impl DeviceId {
         self.0.as_str()
     }
 }
-
-#[derive(Debug, Display, Deserialize, Serialize)]
-pub struct SessionId(String);
-
-impl SessionId {
-    pub fn new(value: String) -> Result<Self> {
-        if value.trim().is_empty() {
-            bail!("value should not be empty")
-        }
-        Ok(Self(value))
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-}

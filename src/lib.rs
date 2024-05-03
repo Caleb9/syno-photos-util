@@ -1,14 +1,14 @@
-pub use crate::{cli::Cli, fs::FsImpl, io::IoImpl};
+use crate::http::HeaderValue;
+pub use crate::{cli::Cli, fs::FsImpl, http::CookieClient, io::IoImpl};
 use crate::{
     cli::Command,
     commands::{export, list, login, logout, status},
     conf::Conf,
     fs::Fs,
-    http::HttpClient,
+    http::{CookieStore, HttpClient},
     io::Io,
 };
 use anyhow::Result;
-pub use reqwest::ClientBuilder;
 
 mod cli;
 mod commands;
@@ -20,13 +20,19 @@ mod io;
 #[cfg(test)]
 mod test;
 
-pub async fn run<I: Io, C: HttpClient, F: Fs>(
+pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
     cli: Cli,
     io: &mut I,
-    client: &C,
+    client: &mut CookieClient<C, S>,
     fs: &F,
 ) -> Result<()> {
     let mut conf = Conf::try_load(fs).unwrap_or_else(Conf::new);
+    if let Some(session) = &conf.session {
+        let cookie = HeaderValue::from_str(session.cookie.as_str())?;
+        client
+            .cookie_store
+            .set_cookies(&mut [cookie].iter(), &session.url);
+    }
     match cli.command {
         Command::Login {
             dsm_url,
@@ -45,11 +51,22 @@ pub async fn run<I: Io, C: HttpClient, F: Fs>(
             .await
         }
         Command::Status => status::handle(&conf, io),
-        Command::List { album_name } => list::handle(album_name.as_str(), &conf, client, io).await,
+        Command::List { album_name } => {
+            list::handle(album_name.as_str(), &conf, &client.client, io).await
+        }
         Command::Export {
             album_name,
             folder_path,
-        } => export::handle(album_name.as_str(), folder_path.as_str(), &conf, client, io).await,
+        } => {
+            export::handle(
+                album_name.as_str(),
+                folder_path.as_str(),
+                &conf,
+                &client.client,
+                io,
+            )
+            .await
+        }
         Command::Logout { forget } => logout::handle(conf, forget, fs),
     }
 }

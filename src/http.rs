@@ -1,12 +1,13 @@
 //! Isolates [reqwest::Client] for testing
 
 use anyhow::Result;
-pub use reqwest::Url;
+pub use reqwest::{cookie::CookieStore, header::HeaderValue, Url};
 use reqwest::{Client as ReqwestClient, IntoUrl, Response as ReqwestResponse, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Debug;
 use std::future::Future;
+use std::sync::Arc;
 
 pub trait HttpClient {
     type Response: HttpResponse + Debug;
@@ -50,4 +51,9 @@ impl HttpResponse for ReqwestResponse {
     async fn json<T: DeserializeOwned>(self) -> Result<T> {
         Ok(ReqwestResponse::json(self).await?)
     }
+}
+
+pub struct CookieClient<C: HttpClient, S: CookieStore> {
+    pub client: C,
+    pub cookie_store: Arc<S>,
 }
