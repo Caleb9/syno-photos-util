@@ -201,7 +201,6 @@ The binary is then located at `target/release/syno-photos-util`.
 ## TODO
 
 * Add support for "Places" albums
-* Add an option for the `export` command to create the target folder
 
 ## Credits
 
