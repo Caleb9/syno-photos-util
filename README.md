@@ -58,8 +58,9 @@ Commands:
   login   Sign in to Synology DSM
   list    List file locations (folders) of photos in an album
   export  Export (accessible) album photos to a folder in the user's personal space
-  status  Check DSM sign-in status
   logout  Sign out of DSM
+  status  Check DSM sign-in status
+  check-update  Check if new version is available
   help    Print this message or the help of the given subcommand(s)
 
 Options:
