@@ -22,6 +22,7 @@ mod api_client;
 pub async fn handle<C: HttpClient, I: Io>(
     album_name: &str,
     target_folder_path: &str,
+    create_folder: bool,
     conf: &Conf,
     client: &C,
     io: &mut I,
@@ -37,7 +38,7 @@ pub async fn handle<C: HttpClient, I: Io>(
     }
 
     let folder_path = format!("/{}", target_folder_path.trim().trim_matches('/'));
-    log::info!("Target folder: {folder_path}");
+    log::info!("target folder: {folder_path}");
     let folder_future = client.get_folder_by_name(folder_path.as_str());
 
     let find_album_future = find_album(album_name, &user_settings, &client);
@@ -45,6 +46,9 @@ pub async fn handle<C: HttpClient, I: Io>(
     let folder = match folder_future.await {
         Ok(folder) => folder,
         Err(error) => match error.downcast::<DsmError>()? {
+            DsmError::Photo(PhotoError::NoAccessOrNotFound) if create_folder => {
+                create_folder_path(folder_path.as_str(), &client).await?
+            }
             DsmError::Photo(PhotoError::NoAccessOrNotFound) => {
                 bail!("folder '{target_folder_path}' does not exist in Personal Space")
             }
@@ -62,6 +66,38 @@ pub async fn handle<C: HttpClient, I: Io>(
             album_not_found(album_name, matching_albums, io)
         }
     }
+}
+
+async fn create_folder_path<C: ApiClient>(
+    folder_path: &str,
+    client: &SessionClient<'_, C>,
+) -> Result<Folder> {
+    let path_segments: Vec<_> = folder_path.split('/').filter(|s| !s.is_empty()).collect();
+    if path_segments.iter().any(|s| s.trim().is_empty()) {
+        bail!("{folder_path} is not valid folder path");
+    }
+    let mut result_folder = client.get_folder_by_name("/").await?;
+    let mut path_so_far = String::new();
+    let mut exists = true;
+    for segment in path_segments {
+        path_so_far.push('/');
+        path_so_far.push_str(segment);
+        if exists {
+            let folder_result = client.get_folder_by_name(path_so_far.as_str()).await;
+            match folder_result {
+                Ok(folder) => result_folder = folder,
+                Err(error) => match error.downcast::<DsmError>()? {
+                    DsmError::Photo(PhotoError::NoAccessOrNotFound) => exists = false,
+                    other => bail!(other),
+                },
+            }
+        }
+        if !exists {
+            result_folder = client.create_folder(segment, result_folder.id).await?;
+            log::info!("created {path_so_far} folder")
+        }
+    }
+    Ok(result_folder)
 }
 
 async fn export<C: ApiClient, I: Io>(

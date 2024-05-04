@@ -66,7 +66,7 @@ fn unwrap_or_read_dsm_url<I: Io>(url: Option<Url>, conf: &Conf, io: &mut I) -> R
         dsm_url
             .set_port(Some(port))
             .expect("DSM URL address should be valid");
-        log::info!("Using DSM address: {dsm_url}")
+        log::info!("using DSM address: {dsm_url}")
     }
     Ok(dsm_url)
 }

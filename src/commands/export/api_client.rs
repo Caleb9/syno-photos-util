@@ -8,19 +8,34 @@ use syno_api::foto::background_task::file::dto::TaskInfo;
 use syno_api::foto::{self, browse::folder::dto::Folder};
 use syno_api::foto_team;
 
+#[derive(Debug, Deserialize)]
+struct FolderContainer {
+    folder: Folder,
+}
+
 impl<'a, C: ApiClient> SessionClient<'a, C> {
     pub async fn get_folder_by_name(&self, name: &str) -> Result<Folder> {
-        #[derive(Debug, Deserialize)]
-        struct FolderContainer {
-            folder: Folder,
-        }
-
         let folder: FolderContainer = self
             .client
             .get(
                 self.dsm_url.clone(),
                 ApiParams::new(foto::browse::folder::API, "get", 1),
                 &[("name", name)],
+            )
+            .await?;
+        Ok(folder.folder)
+    }
+
+    pub async fn create_folder(&self, name: &str, parent_id: u32) -> Result<Folder> {
+        let folder: FolderContainer = self
+            .client
+            .post(
+                self.dsm_url.clone(),
+                ApiParams::new(foto::browse::folder::API, "create", 1),
+                &[
+                    ("name", name),
+                    ("target_id", parent_id.to_string().as_str()),
+                ],
             )
             .await?;
         Ok(folder.folder)

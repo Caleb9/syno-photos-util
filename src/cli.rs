@@ -75,7 +75,11 @@ pub enum Command {
         /// Album name; can be a person name in "People" auto-album
         album_name: String,
 
-        /// Folder name in user's Personal Space (must exist)
+        /// Create target folder if it does not exist in Personal Space
+        #[arg(long)]
+        create: bool,
+
+        /// Folder name in user's Personal Space
         folder_path: String,
     },
 

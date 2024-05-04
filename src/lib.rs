@@ -56,11 +56,13 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
         }
         Command::Export {
             album_name,
+            create,
             folder_path,
         } => {
             export::handle(
                 album_name.as_str(),
                 folder_path.as_str(),
+                create,
                 &conf,
                 &client.client,
                 io,
