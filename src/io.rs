@@ -21,6 +21,7 @@ pub(crate) fn read_input<I: Io>(prompt: &str, io: &mut I) -> Result<String> {
     write!(io.stdout(), "{prompt}: ")?;
     io.stdout().flush()?;
     io.stdin().read_line(&mut input)?;
+    input.truncate(input.trim_end().len());
     Ok(input)
 }
 
