@@ -1,6 +1,6 @@
 [package]
 name = "syno-photos-util"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Helper for a number of tasks unavailable in Synology Photos web interface"
 license = "GPL-3.0-or-later"
