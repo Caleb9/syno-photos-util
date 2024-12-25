@@ -20,7 +20,7 @@ rust-version = "1.75.0"
 [dependencies]
 anyhow = "1.*"
 clap = { version = "4.*", features = ["derive", "wrap_help"] }
-derive_more = { version = "0.99", default-features = false, features = ["display"] }
+derive_more = { version = "1.0", default-features = false, features = ["display"] }
 dirs = "5.*"
 futures = "0.3"
 log = "0.4"
@@ -34,4 +34,4 @@ tokio = { version = "1", features = ["full"] }
 yapp = { version = "0.4" }
 
 [dev-dependencies]
-mockall = "0.12"
+mockall = "0.13"
