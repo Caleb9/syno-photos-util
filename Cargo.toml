@@ -20,7 +20,7 @@ rust-version = "1.75.0"
 [dependencies]
 anyhow = "1.*"
 clap = { version = "4.*", features = ["derive", "wrap_help"] }
-derive_more = { version = "1.0", default-features = false, features = ["display"] }
+derive_more = { version = "2.0", default-features = false, features = ["display"] }
 dirs = "6.*"
 futures = "0.3"
 log = "0.4"
