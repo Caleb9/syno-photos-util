@@ -18,20 +18,20 @@ use syno_api::foto::setting::user::dto::UserSettings;
 /// Trait to add `get` and `post` methods to `HttpClient` which take parameters required by Synology
 /// Photos API
 pub trait ApiClient {
-    fn get<'a, U, R>(
+    fn get<U, R>(
         &self,
         url: U,
-        common_query_params: ApiParams<'a>,
+        common_query_params: ApiParams,
         query_params: &[(&str, &str)],
     ) -> impl Future<Output = Result<R>>
     where
         U: IntoUrl,
         R: DeserializeOwned + 'static;
 
-    fn post<'a, U, R>(
+    fn post<U, R>(
         &self,
         url: U,
-        common_params: ApiParams<'a>,
+        common_params: ApiParams,
         form_params: &[(&str, &str)],
     ) -> impl Future<Output = Result<R>>
     where
@@ -40,14 +40,14 @@ pub trait ApiClient {
 }
 
 impl<C: HttpClient> ApiClient for C {
-    async fn get<'a, U, R>(
+    async fn get<U, R>(
         &self,
         url: U,
         ApiParams {
             api,
             method,
             version,
-        }: ApiParams<'a>,
+        }: ApiParams<'_>,
         params: &[(&str, &str)],
     ) -> Result<R>
     where
@@ -72,14 +72,14 @@ impl<C: HttpClient> ApiClient for C {
         Ok(data_dto)
     }
 
-    async fn post<'a, U, R>(
+    async fn post<U, R>(
         &self,
         url: U,
         ApiParams {
             api,
             method,
             version,
-        }: ApiParams<'a>,
+        }: ApiParams<'_>,
         params: &[(&str, &str)],
     ) -> Result<R>
     where

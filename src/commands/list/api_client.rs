@@ -8,7 +8,7 @@ use syno_api::dto::List;
 use syno_api::foto::{self, browse::folder::dto::Folder, user_info::dto::UserInfo};
 use syno_api::foto_team;
 
-impl<'a, C: ApiClient> SessionClient<'a, C> {
+impl<C: ApiClient> SessionClient<'_, C> {
     pub async fn get_folder_by_id(&self, (id, space): (u32, Space)) -> Result<Folder> {
         #[derive(Debug, Deserialize, Serialize)]
         struct FolderContainer {

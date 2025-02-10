@@ -13,7 +13,7 @@ struct FolderContainer {
     folder: Folder,
 }
 
-impl<'a, C: ApiClient> SessionClient<'a, C> {
+impl<C: ApiClient> SessionClient<'_, C> {
     pub async fn get_folder_by_name(&self, name: &str) -> Result<Folder> {
         let folder: FolderContainer = self
             .client
