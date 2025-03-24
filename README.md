@@ -25,6 +25,7 @@ __If you like the project, give it a star ⭐, or consider becoming a__
   - [Building from source](#building-from-source)
   - [TODO](#todo)
   - [Credits](#credits)
+  - [Disclaimer](#disclaimer)
 
 ## Why?
 
@@ -208,3 +209,16 @@ The binary is then located at `target/release/syno-photos-util`.
 * [zeichensatz/SynologyPhotosAPI](https://github.com/zeichensatz/SynologyPhotosAPI)
   contains a description of the Synology Photos API that got me
   started
+
+## Disclaimer
+
+This project is an independent, open-source application and is not
+affiliated, associated, authorized, endorsed by, or in any way
+officially connected with Synology Inc. "Synology" and any related
+product names, logos, and trademarks are the property of Synology Inc.
+
+The use of Synology Photos in this project is solely for
+interoperability purposes, and the project does not provide any
+official support from Synology. All trademarks, product names, and
+company names mentioned in this repository belong to their respective
+owners.
