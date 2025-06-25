@@ -21,11 +21,11 @@ jobs:
       matrix:
         platform:
           - os_name: Linux-aarch64
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             bin: syno-photos-util_${{ github.ref_name }}_linux-arm64
           - os_name: Linux-x86_64
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: syno-photos-util_${{ github.ref_name }}_linux-amd64
           - os_name: Windows-x86_64
