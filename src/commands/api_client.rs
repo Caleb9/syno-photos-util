@@ -8,12 +8,12 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use std::future::Future;
 use syno_api::dto::{ApiResponse, List};
-use syno_api::foto;
 use syno_api::foto::browse::album::dto::Album as AlbumDto;
 use syno_api::foto::browse::item::dto::Item;
 use syno_api::foto::browse::person::dto::Person;
 use syno_api::foto::search::dto::Search;
-use syno_api::foto::setting::user::dto::UserSettings;
+use syno_api::foto::setting::{team_space::dto::TeamSpaceSettings, user::dto::UserSettings};
+use syno_api::{foto, foto_team};
 
 /// Trait to add `get` and `post` methods to `HttpClient` which take parameters required by Synology
 /// Photos API
@@ -168,6 +168,16 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             .await
     }
 
+    pub async fn get_team_space_settings(&self) -> Result<TeamSpaceSettings> {
+        self.client
+            .get(
+                self.dsm_url.clone(),
+                ApiParams::new(foto::setting::team_space::API, "get", 1),
+                &[],
+            )
+            .await
+    }
+
     pub async fn count_owned_albums(&self) -> Result<u32> {
         #[derive(Debug, Deserialize)]
         struct CountContainer {
@@ -216,7 +226,7 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
         Ok(data.list)
     }
 
-    pub async fn count_people(&self) -> Result<u32> {
+    pub async fn count_people(&self, space: Space) -> Result<u32> {
         #[derive(Debug, Deserialize)]
         struct CountContainer {
             count: u32,
@@ -226,19 +236,19 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
             .client
             .get(
                 self.dsm_url.clone(),
-                ApiParams::new(foto::browse::person::API, "count", 2),
+                ApiParams::new(space.browse_person_api(), "count", 2),
                 &[("show_more", true.to_string().as_str())],
             )
             .await?;
         Ok(data.count)
     }
 
-    pub async fn list_people(&self, limit: u32) -> Result<Vec<Person>> {
+    pub async fn list_people(&self, space: Space, limit: u32) -> Result<Vec<Person>> {
         let data: List<Person> = self
             .client
             .get(
                 self.dsm_url.clone(),
-                ApiParams::new(foto::browse::person::API, "list", 1),
+                ApiParams::new(space.browse_person_api(), "list", 1),
                 &[("offset", "0"), ("limit", limit.to_string().as_str())],
             )
             .await?;
@@ -247,11 +257,15 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
 
     pub async fn list_items(&self, album: &Album, limit: u32) -> Result<Vec<Item>> {
         let (key, value) = album.id_param();
+        let api = match album {
+            Album::Normal(_) => foto::browse::item::API,
+            Album::Person(_, space) => space.browse_item_api(),
+        };
         let items: List<Item> = self
             .client
             .get(
                 self.dsm_url.clone(),
-                ApiParams::new(foto::browse::item::API, "list", 1),
+                ApiParams::new(api, "list", 1),
                 &[
                     (key, value.as_str()),
                     ("offset", "0"),
@@ -284,8 +298,24 @@ impl<'a, C: ApiClient> SessionClient<'a, C> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Space {
     Personal,
     Shared,
+}
+
+impl Space {
+    pub fn browse_person_api(&self) -> &'static str {
+        match self {
+            Space::Personal => foto::browse::person::API,
+            Space::Shared => foto_team::browse::person::API,
+        }
+    }
+
+    pub fn browse_item_api(&self) -> &'static str {
+        match self {
+            Space::Personal => foto::browse::item::API,
+            Space::Shared => foto_team::browse::item::API,
+        }
+    }
 }

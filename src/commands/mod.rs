@@ -1,4 +1,4 @@
-use crate::commands::api_client::{ApiClient, SessionClient};
+use crate::commands::api_client::{ApiClient, SessionClient, Space};
 use crate::io::Io;
 use anyhow::Result;
 use std::io::Write;
@@ -6,6 +6,7 @@ pub use syno_api::error::Error as DsmError;
 use syno_api::foto::browse::album::dto::Album as AlbumDto;
 use syno_api::foto::browse::person::dto::Person as PersonDto;
 use syno_api::foto::search::dto::Search;
+use syno_api::foto::setting::team_space::dto::TeamSpaceSettings;
 use syno_api::foto::setting::user::dto::UserSettings;
 
 mod api_client;
@@ -21,21 +22,21 @@ pub mod status;
 #[derive(Debug)]
 pub enum Album {
     Normal(AlbumDto),
-    Person(PersonDto),
+    Person(PersonDto, Space),
 }
 
 impl Album {
     pub fn item_count(&self) -> u32 {
         match self {
             Album::Normal(a) => a.item_count,
-            Album::Person(p) => p.item_count,
+            Album::Person(p, _) => p.item_count,
         }
     }
 
     pub fn name(&self) -> &str {
         match self {
             Album::Normal(a) => a.name.as_str(),
-            Album::Person(p) => p.name.as_str(),
+            Album::Person(p, _) => p.name.as_str(),
         }
     }
 
@@ -48,7 +49,7 @@ impl Album {
                     ("album_id", a.id.to_string())
                 }
             }
-            Album::Person(p) => ("person_id", p.id.to_string()),
+            Album::Person(p, _) => ("person_id", p.id.to_string()),
         }
     }
 }
@@ -57,6 +58,7 @@ impl Album {
 async fn find_album<C: ApiClient>(
     album_name: &str,
     user_settings: &UserSettings,
+    team_space_settings: &TeamSpaceSettings,
     client: &SessionClient<'_, C>,
 ) -> Result<Option<Album>> {
     /// Search among shared albums. There is no known API method to detect the number of
@@ -87,10 +89,11 @@ async fn find_album<C: ApiClient>(
 
     async fn find_person_album<C: ApiClient>(
         album_name: &str,
+        space: Space,
         client: &SessionClient<'_, C>,
     ) -> Result<Option<PersonDto>> {
-        let limit = client.count_people().await?;
-        let people = client.list_people(limit).await?;
+        let limit = client.count_people(space).await?;
+        let people = client.list_people(space, limit).await?;
         let person = people
             .into_iter()
             .find(|p| p.name.eq_ignore_ascii_case(album_name));
@@ -106,17 +109,28 @@ async fn find_album<C: ApiClient>(
     } else {
         None
     };
-    let album = match owned_album {
-        Some(a) => Some(Album::Normal(a)),
-        None => match find_shared_album(album_name, client).await? {
-            Some(a) => Some(Album::Normal(a)),
-            None if user_settings.enable_person => find_person_album(album_name, client)
-                .await?
-                .map(Album::Person),
-            None => None,
-        },
-    };
-    Ok(album)
+    if let Some(album) = owned_album {
+        return Ok(Some(Album::Normal(album)));
+    }
+    let shared_album = find_shared_album(album_name, client).await?;
+    if let Some(album) = shared_album {
+        return Ok(Some(Album::Normal(album)));
+    }
+    if user_settings.enable_person {
+        let private_space_person_album = find_person_album(album_name, Space::Personal, client)
+            .await?
+            .map(|p| Album::Person(p, Space::Personal));
+        if let Some(person_album) = private_space_person_album {
+            return Ok(Some(person_album));
+        }
+    }
+    if let Some(true) = team_space_settings.enable_person {
+        let shared_space_person_album = find_person_album(album_name, Space::Shared, client)
+            .await?
+            .map(|p| Album::Person(p, Space::Shared));
+        return Ok(shared_space_person_album);
+    }
+    Ok(None)
 }
 
 /// Print album-not-found information and suggest albums containing `album_name` in their name.

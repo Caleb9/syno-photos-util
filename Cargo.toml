@@ -1,6 +1,6 @@
 [package]
 name = "syno-photos-util"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "Helper for a number of tasks unavailable in Synology Photos web interface"
 license = "GPL-3.0-or-later"
@@ -29,9 +29,9 @@ serde = { version = "1.*", features = ["derive"] }
 serde_json = "1.*"
 serde_with = "3.*"
 simple_logger = "5.0"
-syno_api = { version = "0.3" }
+syno_api = { version = "0.5" }
 tokio = { version = "1", features = ["full"] }
-yapp = { version = "0.4" }
+yapp = { version = "0.5" }
 
 [dev-dependencies]
 mockall = "0.13"

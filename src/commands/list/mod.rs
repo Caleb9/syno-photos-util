@@ -27,8 +27,9 @@ pub async fn handle<C: HttpClient, I: Io>(
     }
     let client = SessionClient::new(conf.session.as_ref().unwrap(), client);
     let user_settings = client.get_user_settings().await?;
+    let team_space_settings = client.get_team_space_settings().await?;
 
-    let album = find_album(album_name, &user_settings, &client).await?;
+    let album = find_album(album_name, &user_settings, &team_space_settings, &client).await?;
     match album {
         Some(album) => {
             let photos = client

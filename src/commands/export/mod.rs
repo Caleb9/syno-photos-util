@@ -41,7 +41,13 @@ pub async fn handle<C: HttpClient, I: Io>(
     log::info!("target folder: {folder_path}");
     let folder_future = client.get_folder_by_name(folder_path.as_str());
 
-    let find_album_future = find_album(album_name, &user_settings, &client);
+    let team_space_settings = client.get_team_space_settings().await?;
+    let find_album_future = find_album(
+        album_name,
+        &user_settings,
+        &team_space_settings,
+        &client,
+    );
 
     let folder = match folder_future.await {
         Ok(folder) => folder,
