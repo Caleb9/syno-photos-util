@@ -1,9 +1,9 @@
 use crate::commands::api_client::{ApiClient, SessionClient, Space};
-use crate::commands::{album_not_found, find_album, Album, DsmError};
+use crate::commands::{Album, DsmError, album_not_found, find_album};
 use crate::conf::Conf;
 use crate::http::HttpClient;
 use crate::io::Io;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::io::Write;
 use std::time::Duration;
 use syno_api::foto::background_task::file::dto::TaskInfo;
@@ -42,12 +42,7 @@ pub async fn handle<C: HttpClient, I: Io>(
     let folder_future = client.get_folder_by_name(folder_path.as_str());
 
     let team_space_settings = client.get_team_space_settings().await?;
-    let find_album_future = find_album(
-        album_name,
-        &user_settings,
-        &team_space_settings,
-        &client,
-    );
+    let find_album_future = find_album(album_name, &user_settings, &team_space_settings, &client);
 
     let folder = match folder_future.await {
         Ok(folder) => folder,

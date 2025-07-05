@@ -1,7 +1,7 @@
 //! CLI options
 
 use crate::http::Url;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 pub use clap::Parser;
 use clap::Subcommand;
 use std::time::Duration;

@@ -3,9 +3,9 @@
 use crate::commands::login::creds::DeviceId;
 use crate::fs::Fs;
 use crate::http::Url;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{DisplayFromStr, serde_as};
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;

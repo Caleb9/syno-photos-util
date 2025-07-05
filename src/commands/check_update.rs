@@ -1,6 +1,6 @@
 use crate::http::{HttpClient, HttpResponse};
 use crate::io::Io;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use io::Write;
 use std::io;
 
@@ -14,10 +14,12 @@ pub async fn handle<C: HttpClient, I: Io>(
         .await?;
     let status = response.status();
     if !status.is_success() {
-        bail!(status
-            .canonical_reason()
-            .unwrap_or(status.as_str())
-            .to_string())
+        bail!(
+            status
+                .canonical_reason()
+                .unwrap_or(status.as_str())
+                .to_string()
+        )
     }
     let remote_crate = response
         .text()

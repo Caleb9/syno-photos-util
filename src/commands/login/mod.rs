@@ -1,12 +1,12 @@
 use super::DsmError;
 use crate::{
+    CookieClient,
     conf::{Conf, Session},
     fs::Fs,
     http::{CookieStore, HttpClient, Url},
-    io::{read_input, Io},
-    CookieClient,
+    io::{Io, read_input},
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use creds::{DeviceId, InputReader, UserCredentials};
 use std::str::FromStr;
 use syno_api::auth::dto::Login;

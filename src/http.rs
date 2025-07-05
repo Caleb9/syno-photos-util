@@ -1,10 +1,10 @@
 //! Isolates [reqwest::Client] for testing
 
 use anyhow::Result;
-pub use reqwest::{cookie::CookieStore, header::HeaderValue, Url};
 use reqwest::{Client as ReqwestClient, IntoUrl, Response as ReqwestResponse, StatusCode};
-use serde::de::DeserializeOwned;
+pub use reqwest::{Url, cookie::CookieStore, header::HeaderValue};
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::future::Future;
 use std::sync::Arc;

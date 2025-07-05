@@ -1,5 +1,5 @@
-use crate::io::{read_input, Io};
-use anyhow::{bail, Result};
+use crate::io::{Io, read_input};
+use anyhow::{Result, bail};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use yapp::PasswordReader;

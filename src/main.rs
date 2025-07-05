@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
 use log::LevelFilter;
-use reqwest::cookie::Jar;
 use reqwest::ClientBuilder;
+use reqwest::cookie::Jar;
 use simple_logger::SimpleLogger;
 use std::sync::Arc;
 use syno_photos_util::{Cli, CookieClient, FsImpl, IoImpl};

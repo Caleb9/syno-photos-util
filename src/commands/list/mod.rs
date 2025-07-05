@@ -1,9 +1,9 @@
 use crate::commands::api_client::{ApiClient, SessionClient, Space};
-use crate::commands::{album_not_found, find_album, DsmError};
+use crate::commands::{DsmError, album_not_found, find_album};
 use crate::conf::Conf;
 use crate::http::HttpClient;
 use crate::io::Io;
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow, bail};
 use futures::stream::{self, StreamExt};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
@@ -83,10 +83,9 @@ async fn get_folder_results<C: ApiClient>(
             }
             (true, _some) => {
                 /* user has access to both spaces, try them in sequence */
-                if let Ok(folder) = client.get_folder_by_id((folder_id, Space::Personal)).await {
-                    Ok(folder)
-                } else {
-                    client.get_folder_by_id((folder_id, Space::Shared)).await
+                match client.get_folder_by_id((folder_id, Space::Personal)).await {
+                    Ok(folder) => Ok(folder),
+                    _ => client.get_folder_by_id((folder_id, Space::Shared)).await,
                 }
             }
         };
