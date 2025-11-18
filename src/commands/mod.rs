@@ -14,6 +14,7 @@ pub mod check_update;
 mod error;
 pub mod export;
 pub mod list;
+pub mod list_albums;
 pub mod login;
 pub mod logout;
 pub mod status;

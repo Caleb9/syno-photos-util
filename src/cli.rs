@@ -62,6 +62,11 @@ pub enum Command {
         remember: bool,
     },
 
+    /// List albums accessible by the currently logged-in user
+    ///
+    /// Lists only regular (owned and shared) albums, not People or Places albums
+    ListAlbums,
+
     /// List file locations (folders) of photos in an album
     List {
         /// Album name; can also be a person name in "People" auto-album

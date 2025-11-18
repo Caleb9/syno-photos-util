@@ -149,7 +149,7 @@ fn print_results<I: Io>(
                     _ => format!("/var/services/homes/{owner}/Photos"),
                 };
                 let sub_folder = folder.name.trim_end_matches('/');
-                writeln!(io.stdout(), "'{prefix}{sub_folder}/{filename}'")?;
+                writeln!(io.stdout(), "{prefix}{sub_folder}/{filename}")?;
             }
             Err(e) => {
                 let e_str = match e.downcast_ref::<DsmError>() {

@@ -2,7 +2,7 @@ use crate::http::HeaderValue;
 pub use crate::{cli::Cli, fs::FsImpl, http::CookieClient, io::IoImpl};
 use crate::{
     cli::Command,
-    commands::{check_update, export, list, login, logout, status},
+    commands::{check_update, export, list, list_albums, login, logout, status},
     conf::Conf,
     fs::Fs,
     http::{CookieStore, HttpClient},
@@ -51,6 +51,7 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
             )
             .await
         }
+        Command::ListAlbums => list_albums::handle(&conf, &client.client, io).await,
         Command::List { album_name } => {
             list::handle(album_name.as_str(), &conf, &client.client, io).await
         }
