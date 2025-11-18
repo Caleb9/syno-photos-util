@@ -8,6 +8,7 @@ Helper for [Synology
 Photos](https://www.synology.com/en-global/dsm/feature/photos)
 maintenance.
 
+* List accessible albums (owned and shared-with-me)
 * List folders containing photos in a Synology Photos album
 * Copy album contents into a Synology Photos folder
 
@@ -56,13 +57,14 @@ Display the help message:
 Usage: syno-photos-util [OPTIONS] <COMMAND>
 
 Commands:
-  login   Sign in to Synology DSM
-  list    List file locations (folders) of photos in an album
-  export  Export (accessible) album photos to a folder in the user's personal space
-  logout  Sign out of DSM
-  status  Check DSM sign-in status
+  login         Sign in to Synology DSM
+  list-albums   List albums accessible by the currently logged-in user
+  list          List file locations (folders) of photos in an album
+  export        Export (accessible) album photos to a folder in the user's Personal Space
+  logout        Sign out of DSM
+  status        Check DSM sign-in status
   check-update  Check if new version is available
-  help    Print this message or the help of the given subcommand(s)
+  help          Print this message or the help of the given subcommand(s)
 
 Options:
       --timeout <TIMEOUT_SECONDS>
@@ -122,8 +124,8 @@ printing their file-system paths on your NAS:
 The output may look like this, for example:
 
 ```
-'/var/services/homes/alice/Photos/PhotoLibrary/2022/11/mountain.jpg'
-'/var/services/photo/beach.jpeg'
+/var/services/homes/alice/Photos/PhotoLibrary/2022/11/mountain.jpg
+/var/services/photo/beach.jpeg
 Error: no access (owned by bob) 'forest.jpg'
 ```
 
