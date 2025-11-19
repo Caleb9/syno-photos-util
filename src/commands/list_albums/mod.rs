@@ -7,19 +7,29 @@ use crate::conf::Conf;
 use crate::http::HttpClient;
 use crate::io::Io;
 
-pub async fn handle<C: HttpClient, I: Io>(conf: &Conf, client: &C, io: &mut I) -> Result<()> {
+pub async fn handle<C: HttpClient, I: Io>(
+    (show_owned, show_shared): (bool, bool),
+    conf: &Conf,
+    client: &C,
+    io: &mut I,
+) -> Result<()> {
     if !conf.is_logged_in() {
         bail!("you are not signed in to DSM, use the 'login' command (see '--help' for details)");
     }
     let client = SessionClient::new(conf.session.as_ref().unwrap(), client);
-    let owned_albums_count = client.count_owned_albums().await?;
-    let owned_albums_list = client.list_owned_albums(owned_albums_count).await?;
-    for owned_album in owned_albums_list {
-        writeln!(io.stdout(), "{}", owned_album.name)?;
+    let show_all_by_default = !show_owned && !show_shared;
+    if show_owned || show_all_by_default {
+        let owned_albums_count = client.count_owned_albums().await?;
+        let owned_albums_list = client.list_owned_albums(owned_albums_count).await?;
+        for owned_album in owned_albums_list {
+            writeln!(io.stdout(), "{}", owned_album.name)?;
+        }
     }
-    let shared_albums_list = list_shared_albums(&client).await?;
-    for shared_album in shared_albums_list {
-        writeln!(io.stdout(), "{}", shared_album.name)?;
+    if show_shared || show_all_by_default {
+        let shared_albums_list = list_shared_albums(&client).await?;
+        for shared_album in shared_albums_list {
+            writeln!(io.stdout(), "{}", shared_album.name)?;
+        }
     }
     Ok(())
 }

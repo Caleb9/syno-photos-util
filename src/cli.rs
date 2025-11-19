@@ -64,8 +64,20 @@ pub enum Command {
 
     /// List albums accessible by the currently logged-in user
     ///
-    /// Lists only regular (owned and shared) albums, not People or Places albums
-    ListAlbums,
+    /// Lists only regular albums (not People or Places)
+    ListAlbums {
+        /// Show owned albums
+        ///
+        /// When neither --owned nor --shared is specified, shows both types
+        #[arg(long)]
+        owned: bool,
+
+        /// Show shared albums
+        ///
+        /// When neither --owned nor --shared is specified, shows both types
+        #[arg(long)]
+        shared: bool,
+    },
 
     /// List file locations (folders) of photos in an album
     List {

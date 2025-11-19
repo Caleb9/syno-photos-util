@@ -51,7 +51,9 @@ pub async fn run<I: Io, C: HttpClient, S: CookieStore, F: Fs>(
             )
             .await
         }
-        Command::ListAlbums => list_albums::handle(&conf, &client.client, io).await,
+        Command::ListAlbums { owned, shared } => {
+            list_albums::handle((owned, shared), &conf, &client.client, io).await
+        }
         Command::List { album_name } => {
             list::handle(album_name.as_str(), &conf, &client.client, io).await
         }
